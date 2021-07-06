@@ -8,15 +8,15 @@ const path = require("path");
 const deepl = require("deepl");
 const { resolve } = require("path");
 
-const translate = async (text) => {
+const translate = async ({ text, source_lang, target_lang }) => {
   const auth_key = "1ad2cee4-217c-8df0-a930-a0e29fd4fd4e:fx";
   // console.log("xxxxxxxxxx", text);
   return new Promise((resolve, reject) => {
     deepl({
-      source_lang: "EN",
+      source_lang,
       free_api: true,
       text,
-      target_lang: "PL",
+      target_lang,
       auth_key,
       // All optional parameters available in the official documentation can be defined here as well.
     })

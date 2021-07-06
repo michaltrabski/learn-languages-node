@@ -7,11 +7,14 @@ const download = require("download");
 const { wait, slug, getAudio, getAllMp3, translate } = require("./utils");
 const path = require("path");
 const axios = require("axios");
+const { makeWordsList } = require("./words");
 
 (async () => {
-  // return;
-  // console.log("START");
-  // return console.log("STOPPED");
+  makeWordsList();
+})();
+
+(async () => {
+  return;
   const allMp3 = await getAllMp3();
 
   const browser = await puppeteer.launch({
@@ -27,8 +30,10 @@ const axios = require("axios");
   // console.log(html);
   let $ = cheerio.load(html);
 
-  const limit = 3;
+  const limit = 2;
   let counter = 0;
+  const source_lang = "EN";
+  const target_lang = "PL";
   $("[data-mp3]").each(function () {
     (async () => {
       counter++;
@@ -37,16 +42,35 @@ const axios = require("axios");
       const mp3FileName = slug + ".mp3";
 
       const content = $(this).text();
-      const translationPl = await translate(content);
-      console.log("translationPl", translationPl);
+
+      const translations = {};
+      const translation = await translate({
+        text: content,
+        source_lang,
+        target_lang,
+      });
+      translations[target_lang] = translation;
+
       const words = content.split(" ").map((word) => ({ word }));
       for (let item of words) {
         // console.log(item, item.word);
-        const translationPl = await translate(item.word);
-        item.translationPl = translationPl;
+        const translation = await translate({
+          text: item.word,
+          source_lang,
+          target_lang,
+        });
+        if (!item.translations) item.translations = {};
+        item.translations[target_lang] = translation;
       }
 
-      const data = { slug, mp3FileName, content, translationPl, words };
+      const data = {
+        slug,
+        mp3FileName,
+        source_lang,
+        content,
+        translations,
+        words,
+      };
 
       fs.writeFile(
         path.resolve(__dirname, "mp3", `${slug}.json`),
