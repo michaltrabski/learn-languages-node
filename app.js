@@ -1,3 +1,4 @@
+require("dotenv").config();
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const https = require("https");
@@ -9,8 +10,28 @@ const path = require("path");
 const axios = require("axios");
 const { makeWordsList } = require("./words");
 
+console.log(1, process.env.REACT_APP_URL);
+
+const source_lang = "EN";
+const target_lang = "PL";
+
 (async () => {
-  makeWordsList();
+  const { normalizedText, words, sentences } = await makeWordsList();
+
+  const examplesFromWords = [];
+  words.forEach((i) => i.examples.forEach((s) => examplesFromWords.push(s)));
+  for (exmpl of examplesFromWords) {
+    fs.writeFileSync(
+      path.resolve(__dirname, "mp3", `${slug(exmpl)}.json`),
+      JSON.stringify({
+        slug: slug(exmpl),
+        source_lang,
+        content: exmpl,
+        translations: { PL: "Tu będzie translacja" },
+        words: exmpl.split(" "),
+      })
+    );
+  }
 })();
 
 (async () => {
@@ -23,7 +44,7 @@ const { makeWordsList } = require("./words");
   });
 
   const page = await browser.newPage();
-  await page.goto("https://fast-learning.netlify.app/");
+  await page.goto(process.env.REACT_APP_URL);
   await wait(1000);
   let html = await page.evaluate(() => document.body.innerHTML);
 
@@ -32,8 +53,7 @@ const { makeWordsList } = require("./words");
 
   const limit = 2;
   let counter = 0;
-  const source_lang = "EN";
-  const target_lang = "PL";
+
   $("[data-mp3]").each(function () {
     (async () => {
       counter++;
@@ -84,11 +104,10 @@ const { makeWordsList } = require("./words");
   });
 })();
 
-const loginPage = "https://app.blasteronline.com/user/login";
-const appPage = "https://app.blasteronline.com/speechelo/";
-
-const email = "michal.trabski@gmail.com";
-const password = "C56mhgikoccoc";
+const loginPage = process.env.LOGIN_PAGE_MP3_GENERATOR;
+const appPage = process.env.APP_PAGE_MP3_GENERATOR;
+const email = process.env.EMAIL_MP3_GENERATOR;
+const password = process.env.EMAIL_MP3_PASSWORD;
 
 const items = [
   "If you need to download mp3 file, just choose the size od get it for free.",

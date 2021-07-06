@@ -10,62 +10,62 @@ const axios = require("axios");
 const n = require("normalize-text");
 const _ = require("lodash");
 
-const splitter = "XXXX";
-const examplexPerWord = 5;
-const wordsPerPage = 100;
-const howManyPages = 1;
-const rowTextLenght = 1000900090009;
+const textSource = "largeText.txt"; // "longText1.txt";
+const splitter = "XXDEXX";
+const examplexPerWord = 6;
+const wordsPerPage = 10;
+const howManyPages = 10;
+const rowTextLenght = 1001009; //333444; //900090009;
 const sentenceLenghtMin = 15;
 const sentenceLenghtMax = 50;
 
 const makeWordsList = () => {
-  const file = path.resolve(__dirname, "longText1.txt");
-  fs.readFile(file, "utf8", function (err, text) {
-    if (err) return console.log(err);
+  return new Promise((resolve, reject) => {
+    const file = path.resolve(__dirname, textSource);
+    fs.readFile(file, "utf8", function (err, text) {
+      if (err) return console.log(err);
 
-    const normalizedText = getText(text);
-    fs.writeFile(
-      path.resolve(__dirname, "mp3", `normalizedText.txt`),
-      normalizedText,
-      (err) => {
-        if (err) return console.log(err);
-        console.log("CREATED => normalizedText.txt");
-      }
-    );
+      const normalizedText = getText(text);
+      fs.writeFile(
+        path.resolve(__dirname, "mp3", `0normalizedText.txt`),
+        normalizedText,
+        (err) => {
+          if (err) return console.log(err);
+          console.log("CREATED => normalizedText.txt");
+        }
+      );
 
-    // 2 get sentences
-    const sentences = getSentences(normalizedText);
+      // 2 get sentences
+      const sentences = getSentences(normalizedText);
 
-    // 3 get words object
-    const words = getWords(normalizedText, sentences);
+      // 3 get words object
+      const words = getWords(normalizedText, sentences);
 
-    const wordsChunk = _.chunk(words, wordsPerPage);
-    // console.log(wordsChunk);
+      const wordsChunk = _.chunk(words, wordsPerPage).slice(0, howManyPages);
+      // console.log(wordsChunk);
 
-    (async () => {
       let counter = 0;
       for (chunk of wordsChunk) {
         counter++;
-        await fs.writeFile(
+        fs.writeFileSync(
           path.resolve(__dirname, "mp3", `words-${counter}.json`),
-          JSON.stringify(chunk),
-          (err) => {
-            if (err) return console.log(err);
-            console.log("FILE CREATED");
-          }
+          JSON.stringify(chunk)
         );
       }
-    })();
+
+      // console.log("xxxxxxxxxxxxxxxxxx", words.length);
+      resolve({ normalizedText, words, sentences });
+    });
   });
 };
 
 const getText = (text) => {
+  console.log(text.length);
   // 1 normalize text
-  let t = n; //.normalizeWhiteSpaces(text).slice(0, rowTextLenght);
-  t = text.slice(0, rowTextLenght);
+  let t = text.slice(0, rowTextLenght);
 
   // 2 remove caracters
-
+  t = t.replace(/\=/g, " ");
   t = t.replace(/\"/g, "");
   t = t.replace(/\“/g, "");
   t = t.replace(/\”/g, "");

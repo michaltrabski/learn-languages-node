@@ -1,3 +1,4 @@
+require("dotenv").config();
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const https = require("https");
@@ -9,8 +10,7 @@ const deepl = require("deepl");
 const { resolve } = require("path");
 
 const translate = async ({ text, source_lang, target_lang }) => {
-  const auth_key = "1ad2cee4-217c-8df0-a930-a0e29fd4fd4e:fx";
-  // console.log("xxxxxxxxxx", text);
+  const auth_key = process.env.DEEPL_API_KEY;
   return new Promise((resolve, reject) => {
     deepl({
       source_lang,
@@ -22,7 +22,6 @@ const translate = async ({ text, source_lang, target_lang }) => {
     })
       .then((res) => {
         const { translations } = res.data;
-
         resolve(translations[0].text);
       })
       .catch((err) => reject("translate deepl Error"));
@@ -89,9 +88,9 @@ const getAudio = async (page, text) => {
 const wait = (t) => new Promise((r) => setTimeout(() => r(), t));
 
 const slug = (text) => {
-  slugify(text, {
+  return slugify(text, {
     replacement: "-", // replace spaces with replacement character, defaults to `-`
-    remove: /[*+~.?!,()'"!:@]/g, // remove characters that match regex, defaults to `undefined`
+    remove: /[/\\_*+~.?!,()'"!:@]/g, // remove characters that match regex, defaults to `undefined`
     lower: true, // convert to lower case, defaults to `false`
     strict: false, // strip special characters except replacement, defaults to `false`
     locale: "vi", // language code of the locale to use
