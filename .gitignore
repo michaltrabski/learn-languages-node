@@ -1,3 +1,9 @@
+mp3/
+translations/
+
+
+
+
 # Logs
 logs
 *.log
@@ -118,4 +124,3 @@ dist
 
 
 cache/
-mp3/

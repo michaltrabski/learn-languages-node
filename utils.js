@@ -9,6 +9,17 @@ const path = require("path");
 const deepl = require("deepl");
 const { resolve } = require("path");
 
+const readAllJsonFromMp3Folder = () => {
+  const filenames = fs.readdirSync(path.resolve(__dirname, "mp3"));
+  const filenamesFiltered = filenames.filter((f) => f.includes(".json"));
+
+  return filenamesFiltered;
+};
+
+const createFolder = (folderName) => {
+  if (!fs.existsSync(folderName)) fs.mkdirSync(folderName);
+};
+
 const translate = async ({ text, source_lang, target_lang }) => {
   const auth_key = process.env.DEEPL_API_KEY;
   return new Promise((resolve, reject) => {
@@ -97,4 +108,12 @@ const slug = (text) => {
   });
 };
 
-module.exports = { wait, slug, getAudio, getAllMp3, translate };
+module.exports = {
+  wait,
+  slug,
+  getAudio,
+  getAllMp3,
+  translate,
+  createFolder,
+  readAllJsonFromMp3Folder,
+};

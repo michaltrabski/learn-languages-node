@@ -11,12 +11,12 @@ const n = require("normalize-text");
 const _ = require("lodash");
 
 const textSource = "largeText.txt"; // "longText1.txt";
-const splitter = "XXDEXX";
-const examplexPerWord = 6;
-const wordsPerPage = 10;
-const howManyPages = 10;
-const rowTextLenght = 1001009; //333444; //900090009;
-const sentenceLenghtMin = 15;
+const splitter = "XYFNKW";
+const examplexPerWord = 1;
+const wordsPerPage = 3;
+const howManyPages = 1;
+const rowTextLenght = 100100; //333444; //900090009;
+const sentenceLenghtMin = 40;
 const sentenceLenghtMax = 50;
 
 const makeWordsList = () => {
@@ -31,7 +31,7 @@ const makeWordsList = () => {
         normalizedText,
         (err) => {
           if (err) return console.log(err);
-          console.log("CREATED => normalizedText.txt");
+          // console.log("CREATED => normalizedText.txt");
         }
       );
 
@@ -60,11 +60,13 @@ const makeWordsList = () => {
 };
 
 const getText = (text) => {
-  console.log(text.length);
+  // console.log(text.length);
   // 1 normalize text
   let t = text.slice(0, rowTextLenght);
 
   // 2 remove caracters
+  t = t.replace(/\]/g, "");
+  t = t.replace(/\[/g, "");
   t = t.replace(/\=/g, " ");
   t = t.replace(/\"/g, "");
   t = t.replace(/\“/g, "");
@@ -131,7 +133,7 @@ const getWords = (text, sentences) => {
   const first1000words = wordsOrdered.slice(0, 1000).map((w) => w.word);
 
   const examples = createExamplesArray(sentences, first1000words);
-  console.log("examples", examples.length);
+  // console.log("examples", examples.length);
 
   const wordsWithExamples = wordsOrdered.map((item) => {
     const newItem = { ...item };

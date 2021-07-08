@@ -5,19 +5,38 @@ const https = require("https");
 const fs = require("fs");
 const slugify = require("slugify");
 const download = require("download");
-const { wait, slug, getAudio, getAllMp3, translate } = require("./utils");
+const {
+  wait,
+  slug,
+  getAudio,
+  getAllMp3,
+  translate,
+  createFolder,
+  readAllJsonFromMp3Folder,
+} = require("./utils");
 const path = require("path");
 const axios = require("axios");
 const { makeWordsList } = require("./words");
-
-console.log(1, process.env.REACT_APP_URL);
 
 const source_lang = "EN";
 const target_lang = "PL";
 
 (async () => {
+  createFolder("mp3");
   const { normalizedText, words, sentences } = await makeWordsList();
+  // console.log("words => ", words.length);
+  const result = createJsonFileForEachExample(words.slice(0, 3));
+  // console.log(result);
 
+  createFolder("translations");
+  createFolder("translations/EN-PL");
+  createFolder("translations/EN-PLsssssssss");
+  const allJsonFiles = readAllJsonFromMp3Folder();
+  console.log("allJsonFiles", allJsonFiles);
+})();
+
+const createJsonFileForEachExample = (_words) => {
+  const words = [..._words];
   const examplesFromWords = [];
   words.forEach((i) => i.examples.forEach((s) => examplesFromWords.push(s)));
   for (exmpl of examplesFromWords) {
@@ -32,7 +51,8 @@ const target_lang = "PL";
       })
     );
   }
-})();
+  return "createJsonFileForEachExample DONE";
+};
 
 (async () => {
   return;
