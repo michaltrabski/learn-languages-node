@@ -5,6 +5,7 @@ const https = require("https");
 const fs = require("fs");
 const slugify = require("slugify");
 const download = require("download");
+const _ = require("lodash");
 const {
   wait,
   slug,
@@ -24,16 +25,73 @@ const target_lang = "PL";
 (async () => {
   createFolder("mp3");
   const { normalizedText, words, sentences } = await makeWordsList();
-  // console.log("words => ", words.length);
-  const result = createJsonFileForEachExample(words.slice(0, 3));
+  console.log("words => ", words.length);
+  const result = createJsonFileForEachExample(words);
   // console.log(result);
 
-  createFolder("translations");
-  createFolder("translations/EN-PL");
-  createFolder("translations/EN-PLsssssssss");
   const allJsonFiles = readAllJsonFromMp3Folder();
-  console.log("allJsonFiles", allJsonFiles);
+  // console.log("allJsonFiles =>", allJsonFiles);
+
+  await makeDeeplTranslation(allJsonFiles);
+  addTranslationsToContent(allJsonFiles);
 })();
+
+const addTranslationsToContent = (allJsonFiles) => {
+  const _file = `translations/deepl-${source_lang}-${target_lang}.json`;
+  const deeplTranslationStr = fs.readFileSync(_file, {
+    encoding: "utf8",
+  });
+  const deeplTranslation = JSON.parse(deeplTranslationStr);
+  // console.log(deeplTranslation);
+
+  const files = [...allJsonFiles];
+  files.forEach((fileName) => {
+    const file = `mp3/${fileName}`;
+    const str = fs.readFileSync(file, {
+      encoding: "utf8",
+    });
+    const data = JSON.parse(str);
+    if (data.type !== "sentence") return;
+    // console.log(1, data, data[target_lang], deeplTranslation[data.slug]);
+    data[target_lang] = deeplTranslation[data.slug];
+    fs.writeFileSync(file, JSON.stringify(data));
+  });
+};
+
+const makeDeeplTranslation = async (allJsonFiles) => {
+  createFolder("translations");
+  const _file = `translations/deepl-${source_lang}-${target_lang}.json`;
+  const str = fs.readFileSync(_file, {
+    encoding: "utf8",
+  });
+  const translation = JSON.parse(str);
+  // console.log(translation);
+
+  const files = [...allJsonFiles];
+  files.forEach((fileName) => {
+    const file = `mp3/${fileName}`;
+    const data = JSON.parse(
+      fs.readFileSync(file, {
+        encoding: "utf8",
+      })
+    );
+    const { type, slug, content } = data;
+
+    if (type !== "sentence") return;
+    if (translation[slug]) return; // There are translations allready
+
+    (async () => {
+      const deeplTranslation = await translate({
+        text: content,
+        source_lang,
+        target_lang,
+      }); // call for translations
+      translation[slug] = deeplTranslation;
+      data[target_lang] = deeplTranslation;
+      fs.writeFileSync(_file, JSON.stringify(translation));
+    })();
+  });
+};
 
 const createJsonFileForEachExample = (_words) => {
   const words = [..._words];
@@ -43,10 +101,10 @@ const createJsonFileForEachExample = (_words) => {
     fs.writeFileSync(
       path.resolve(__dirname, "mp3", `${slug(exmpl)}.json`),
       JSON.stringify({
+        type: "sentence",
         slug: slug(exmpl),
         source_lang,
         content: exmpl,
-        translations: { PL: "Tu będzie translacja" },
         words: exmpl.split(" "),
       })
     );

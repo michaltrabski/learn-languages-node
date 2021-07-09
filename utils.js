@@ -21,6 +21,7 @@ const createFolder = (folderName) => {
 };
 
 const translate = async ({ text, source_lang, target_lang }) => {
+  console.log("deepl call has been made!!!");
   const auth_key = process.env.DEEPL_API_KEY;
   return new Promise((resolve, reject) => {
     deepl({
@@ -35,7 +36,7 @@ const translate = async ({ text, source_lang, target_lang }) => {
         const { translations } = res.data;
         resolve(translations[0].text);
       })
-      .catch((err) => reject("translate deepl Error"));
+      .catch((err) => reject(err, "translate deepl Error"));
   });
 };
 

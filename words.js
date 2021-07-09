@@ -12,11 +12,11 @@ const _ = require("lodash");
 
 const textSource = "largeText.txt"; // "longText1.txt";
 const splitter = "XYFNKW";
-const examplexPerWord = 1;
-const wordsPerPage = 3;
-const howManyPages = 1;
-const rowTextLenght = 100100; //333444; //900090009;
-const sentenceLenghtMin = 40;
+const examplexPerWord = 5;
+const wordsPerPage = 10;
+const howManyPages = 5;
+const rowTextLenght = 500100; //333444; //900090009;
+const sentenceLenghtMin = 15;
 const sentenceLenghtMax = 50;
 
 const makeWordsList = () => {
