@@ -166,13 +166,15 @@ const getWords = async (conf, text, sentences) => {
 
   // console.log(1, wordsOrderedWithTranslations);
 
-  const first1000words = wordsOrdered.slice(0, 1000).map((w) => w.word);
+  const first1000words = wordsOrderedWithTranslations
+    .slice(0, 1000)
+    .map((w) => w.word);
 
   const examples = createExamplesArray(sentences, first1000words);
   // console.log("examples", examples.length);
 
   const wordsWithExamples = await Promise.all(
-    wordsOrdered.map(async (item) => {
+    wordsOrderedWithTranslations.map(async (item) => {
       const newItem = { ...item };
 
       for (let i = 1; i <= conf.examplexPerWord; i++) {
