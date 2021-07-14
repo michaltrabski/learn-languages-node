@@ -22,24 +22,30 @@ const path = require("path");
 const axios = require("axios");
 const { makeWordsList } = require("./words");
 
+const source_lang = "EN";
+const target_lang = "PL";
+
 const conf = {
-  source_lang: "EN",
-  target_lang: "PL",
-  textSource: "largeText.txt", // "longText1.txt";
+  source_lang,
+  target_lang,
+  textSource: "longText1.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 1,
+  examplexPerWord: 2,
   wordsPerPage: 5,
-  howManyPages: 1,
-  rowTextLenght: 100100, //333444; //900090009;
-  sentenceLenghtMin: 35,
+  howManyPages: 2,
+  rowTextLenght: 100100100,
+  sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
-  deepl_EN_PL: read("translations/deepl_EN_PL.json"),
+  [`deepl_${source_lang}_${target_lang}`]: read(
+    `translations/deepl_${source_lang}_${target_lang}.json`
+  ),
 };
 
 (async () => {
+  console.log("START");
   const { words } = await makeWordsList(conf);
-  // console.log(0, words);
-  createJsonFileForEachExample(words);
+  await createJsonFileForEachExample(conf, words);
+  console.log("DONE");
   // // console.log(result);
   // console.log(55555555555555, conf);
 

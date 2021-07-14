@@ -43,10 +43,11 @@ const makeWordsList = async (conf) => {
 
   // 3 get words object
   const wordsFullLength = await getWords(conf, normalizedText, sentences);
+  // console.log(1, wordsFullLength);
 
   const words = wordsFullLength.slice(0, conf.howManyPages * conf.wordsPerPage);
 
-  // console.log(3, words);
+  // console.log(2, words);
 
   const wordsChunk = _.chunk(words, conf.wordsPerPage);
   // console.log(wordsChunk);
@@ -60,10 +61,7 @@ const makeWordsList = async (conf) => {
       words: chunk,
     };
 
-    fs.writeFileSync(
-      path.resolve(__dirname, "mp3", `words-${counter}.json`),
-      JSON.stringify(data)
-    );
+    write(`mp3/words-${counter}.json`, data);
   }
 
   // console.log("xxxxxxxxxxxxxxxxxx", words);
@@ -76,6 +74,7 @@ const getText = (conf, text) => {
   let t = text.slice(0, conf.rowTextLenght);
 
   // 2 remove caracters
+  t = t.replace(/\*/g, "");
   t = t.replace(/\]/g, "");
   t = t.replace(/\[/g, "");
   t = t.replace(/\=/g, " ");
@@ -125,64 +124,84 @@ const getWords = async (conf, text, sentences) => {
   rowText = rowText.replace(/\,/g, ``);
 
   const rowWords = rowText.split(" ");
-  const wordsFiltered = rowWords.filter((w) => w.length > 1);
+  const wordsFiltered = rowWords.filter((w) => w.length > 1 && w / w !== 1);
+  // console.log(wordsFiltered);
 
   const countWords = _.countBy(wordsFiltered);
 
-  const words = await Promise.all(
-    Object.entries(countWords)
-      .slice(0, conf.wordsPerPage * conf.howManyPages)
-      .map(async (item) => {
-        const translation = await translate(conf, item[0]);
-        console.log(1, item, translation);
-        const word = {
-          word: item[0],
-          [conf.target_lang]: translation,
-          count: item[1],
-          examples: [],
-        };
+  // const words = await Promise.all(
+  //   Object.entries(countWords)
+  //     .slice(0, conf.wordsPerPage * conf.howManyPages)
+  //     .map(async (item) => {
+  //       const translation = await translate(conf, item[0]);
 
-        return word;
-      })
-  );
+  //       const word = {
+  //         word: item[0],
+  //         [conf.target_lang]: translation,
+  //         count: item[1],
+  //         examples: [],
+  //       };
 
-  // var results = await Promise.all(
-  //   words.map(async (word) => {
-  //     await wait(2000);
-  //     console.log("xxxxxxxxxxxxxxx");
-  //     return word + 1;
-  //   })
+  //       return word;
+  //     })
   // );
 
-  const wordsOrdered = _.orderBy(words, ["count"], ["desc"]);
+  const words = Object.entries(countWords).map((item) => ({
+    word: item[0],
+    count: item[1],
+    examples: [],
+  }));
+
+  const wordsOrdered = _.orderBy(words, ["count"], ["desc"]).slice(
+    0,
+    conf.howManyPages * conf.wordsPerPage
+  );
+
+  const wordsOrderedWithTranslations = await Promise.all(
+    wordsOrdered.map(async (item) => {
+      const translation = await translate(conf, item.word);
+      return { ...item, [conf.target_lang]: translation };
+    })
+  );
+
+  console.log(1, wordsOrderedWithTranslations);
 
   const first1000words = wordsOrdered.slice(0, 1000).map((w) => w.word);
 
   const examples = createExamplesArray(sentences, first1000words);
   // console.log("examples", examples.length);
 
-  const wordsWithExamples = wordsOrdered.map((item) => {
-    const newItem = { ...item };
-    // console.log(1, newItem);
+  const wordsWithExamples = await Promise.all(
+    wordsOrdered.map(async (item) => {
+      const newItem = { ...item };
 
-    for (let i = 1; i <= conf.examplexPerWord; i++) {
-      const index = examples.findIndex((example) => {
-        const exampleLowerCase = example
-          .toLowerCase()
-          .replace(/\. /g, "")
-          .replace(/\? /g, "")
-          .replace(/\! /g, "");
+      for (let i = 1; i <= conf.examplexPerWord; i++) {
+        const index = examples.findIndex((example) => {
+          const exampleLowerCase = example
+            .toLowerCase()
+            .replace(/\. /g, "")
+            .replace(/\? /g, "")
+            .replace(/\! /g, "");
 
-        return exampleLowerCase.split(" ").includes(item.word.toLowerCase());
-      });
-      if (index !== -1) {
-        const example = examples.splice(index, 1);
-        newItem.examples.push({ sentence: example[0] });
+          return exampleLowerCase.split(" ").includes(item.word.toLowerCase());
+        });
+        if (index !== -1) {
+          const example = examples.splice(index, 1);
+          // wwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+          // console.log(111111111111111, example[0]);
+          const translation = await translate(conf, example[0]);
+
+          // console.log(223333333, translation);
+          newItem.examples.push({
+            sentence: example[0],
+            [conf.target_lang]: translation,
+          });
+        }
       }
-    }
 
-    return newItem;
-  });
+      return newItem;
+    })
+  );
 
   return wordsWithExamples;
 };
