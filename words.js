@@ -164,7 +164,7 @@ const getWords = async (conf, text, sentences) => {
     })
   );
 
-  console.log(1, wordsOrderedWithTranslations);
+  // console.log(1, wordsOrderedWithTranslations);
 
   const first1000words = wordsOrdered.slice(0, 1000).map((w) => w.word);
 

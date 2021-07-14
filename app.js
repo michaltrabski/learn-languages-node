@@ -30,9 +30,9 @@ const conf = {
   target_lang,
   textSource: "longText1.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 2,
+  examplexPerWord: 3,
   wordsPerPage: 5,
-  howManyPages: 2,
+  howManyPages: 3,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,

@@ -9,6 +9,43 @@ const path = require("path");
 const deepl = require("deepl");
 const { resolve } = require("path");
 
+const translate = async (conf, text) => {
+  const auth_key = process.env.DEEPL_API_KEY;
+  return new Promise((resolve, reject) => {
+    const textSlug = slug(text);
+    const translationFileName = `deepl_${conf.source_lang}_${conf.target_lang}`;
+    const find = conf[translationFileName][textSlug];
+
+    if (find) {
+      resolve(find);
+    } else {
+      console.log("deepl has to be activated");
+      resolve("deepl has to be activated");
+
+      // console.log("deepl call has been made!!!");
+      // deepl({
+      //   source_lang: conf.source_lang,
+      //   free_api: true,
+      //   text,
+      //   target_lang: conf.target_lang,
+      //   auth_key,
+      // })
+      //   .then((res) => {
+      //     const { translations } = res.data;
+      //     const translation = translations[0].text;
+
+      //     conf[translationFileName][textSlug] = translation;
+      //     write(
+      //       `translations/${translationFileName}.json`,
+      //       conf[translationFileName]
+      //     );
+      //     resolve(translation);
+      //   })
+      //   .catch((err) => reject(err, "translate deepl Error"));
+    }
+  });
+};
+
 const createJsonFileForEachExample = async (conf, words) => {
   const examples = [];
   words.forEach((i) => i.examples.forEach((s) => examples.push(s)));
@@ -17,6 +54,16 @@ const createJsonFileForEachExample = async (conf, words) => {
     const { sentence } = example;
     const translation = await translate(conf, sentence);
 
+    const words = sentence.split(" ");
+    const wordsWithTranslations = await Promise.all(
+      words.map(async (word) => {
+        const translation = await translate(conf, word);
+        return { word, [conf.target_lang]: translation };
+      })
+    );
+
+    // console.log(1, words, wordsWithTranslations);
+
     const data = {
       type: "sentence",
       slug: slug(sentence),
@@ -24,7 +71,7 @@ const createJsonFileForEachExample = async (conf, words) => {
       source_lang: conf.source_lang,
       content: sentence,
       [conf.target_lang]: translation,
-      words: sentence.split(" "),
+      words: wordsWithTranslations,
     };
 
     write(`mp3/${slug(sentence)}.json`, data);
@@ -89,43 +136,6 @@ const readAllJsonFromMp3Folder = () => {
 
 const createFolder = (folderName) => {
   if (!fs.existsSync(folderName)) fs.mkdirSync(folderName);
-};
-
-const translate = async (conf, text) => {
-  const auth_key = process.env.DEEPL_API_KEY;
-  return new Promise((resolve, reject) => {
-    const textSlug = slug(text);
-    const translationFileName = `deepl_${conf.source_lang}_${conf.target_lang}`;
-    const find = conf[translationFileName][textSlug];
-
-    if (find) {
-      resolve(find);
-    } else {
-      console.log("deepl has to be activated");
-      resolve("deepl has to be activated");
-
-      // console.log("deepl call has been made!!!");
-      // deepl({
-      //   source_lang: conf.source_lang,
-      //   free_api: true,
-      //   text,
-      //   target_lang: conf.target_lang,
-      //   auth_key,
-      // })
-      //   .then((res) => {
-      //     const { translations } = res.data;
-      //     const translation = translations[0].text;
-
-      //     conf[translationFileName][textSlug] = translation;
-      //     write(
-      //       `translations/${translationFileName}.json`,
-      //       conf[translationFileName]
-      //     );
-      //     resolve(translation);
-      //   })
-      //   .catch((err) => reject(err, "translate deepl Error"));
-    }
-  });
 };
 
 const getAllMp3 = () => {
