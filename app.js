@@ -14,30 +14,44 @@ const {
   translate,
   createFolder,
   readAllJsonFromMp3Folder,
+  createJsonFileForEachExample,
+  makeDeeplTranslation,
+  read,
 } = require("./utils");
 const path = require("path");
 const axios = require("axios");
 const { makeWordsList } = require("./words");
 
-const source_lang = "EN";
-const target_lang = "PL";
+const conf = {
+  source_lang: "EN",
+  target_lang: "PL",
+  textSource: "largeText.txt", // "longText1.txt";
+  splitter: "XYFNKW",
+  examplexPerWord: 1,
+  wordsPerPage: 5,
+  howManyPages: 1,
+  rowTextLenght: 100100, //333444; //900090009;
+  sentenceLenghtMin: 35,
+  sentenceLenghtMax: 50,
+  deepl_EN_PL: read("translations/deepl_EN_PL.json"),
+};
 
 (async () => {
-  createFolder("mp3");
-  const { normalizedText, words, sentences } = await makeWordsList();
-  console.log("words => ", words.length);
-  const result = createJsonFileForEachExample(words);
-  // console.log(result);
+  const { words } = await makeWordsList(conf);
+  // console.log(0, words);
+  createJsonFileForEachExample(words);
+  // // console.log(result);
+  // console.log(55555555555555, conf);
 
-  const allJsonFiles = readAllJsonFromMp3Folder();
-  // console.log("allJsonFiles =>", allJsonFiles);
+  // const allJsonFiles = readAllJsonFromMp3Folder();
+  // // console.log("allJsonFiles =>", allJsonFiles);
 
-  await makeDeeplTranslation(allJsonFiles);
-  addTranslationsToContent(allJsonFiles);
+  // await makeDeeplTranslation(allJsonFiles);
+  // addTranslationsToContent(allJsonFiles);
 })();
 
 const addTranslationsToContent = (allJsonFiles) => {
-  const _file = `translations/deepl-${source_lang}-${target_lang}.json`;
+  const _file = `translations/deepl-${conf.source_lang}-${conf.target_lang}.json`;
   const deeplTranslationStr = fs.readFileSync(_file, {
     encoding: "utf8",
   });
@@ -53,63 +67,9 @@ const addTranslationsToContent = (allJsonFiles) => {
     const data = JSON.parse(str);
     if (data.type !== "sentence") return;
     // console.log(1, data, data[target_lang], deeplTranslation[data.slug]);
-    data[target_lang] = deeplTranslation[data.slug];
+    data[conf.target_lang] = deeplTranslation[data.slug];
     fs.writeFileSync(file, JSON.stringify(data));
   });
-};
-
-const makeDeeplTranslation = async (allJsonFiles) => {
-  createFolder("translations");
-  const _file = `translations/deepl-${source_lang}-${target_lang}.json`;
-  const str = fs.readFileSync(_file, {
-    encoding: "utf8",
-  });
-  const translation = JSON.parse(str);
-  // console.log(translation);
-
-  const files = [...allJsonFiles];
-  files.forEach((fileName) => {
-    const file = `mp3/${fileName}`;
-    const data = JSON.parse(
-      fs.readFileSync(file, {
-        encoding: "utf8",
-      })
-    );
-    const { type, slug, content } = data;
-
-    if (type !== "sentence") return;
-    if (translation[slug]) return; // There are translations allready
-
-    (async () => {
-      const deeplTranslation = await translate({
-        text: content,
-        source_lang,
-        target_lang,
-      }); // call for translations
-      translation[slug] = deeplTranslation;
-      data[target_lang] = deeplTranslation;
-      fs.writeFileSync(_file, JSON.stringify(translation));
-    })();
-  });
-};
-
-const createJsonFileForEachExample = (_words) => {
-  const words = [..._words];
-  const examplesFromWords = [];
-  words.forEach((i) => i.examples.forEach((s) => examplesFromWords.push(s)));
-  for (exmpl of examplesFromWords) {
-    fs.writeFileSync(
-      path.resolve(__dirname, "mp3", `${slug(exmpl)}.json`),
-      JSON.stringify({
-        type: "sentence",
-        slug: slug(exmpl),
-        source_lang,
-        content: exmpl,
-        words: exmpl.split(" "),
-      })
-    );
-  }
-  return "createJsonFileForEachExample DONE";
 };
 
 (async () => {
