@@ -86,8 +86,18 @@ const getText = (conf, text) => {
   t = t.replace(/\;/g, "");
 
   // 3 replace caracters
+  t = t.replace(/\n/g, ".");
   t = t.replace(/\t/g, " ");
   t = t.replace(/\s+/g, " ");
+
+  t = t.replace(/\s+\./g, ".");
+  t = t.replace(/\s+\?/g, "?");
+  t = t.replace(/\s+\!/g, "!");
+
+  t = t.replace(/\.\./g, ".");
+  t = t.replace(/\?\./g, "?");
+  t = t.replace(/\!\./g, "!");
+
   t = t.replace(/\. /g, `.${conf.splitter}`);
   t = t.replace(/\? /g, `?${conf.splitter}`);
   t = t.replace(/\! /g, `!${conf.splitter}`);

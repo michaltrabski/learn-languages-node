@@ -8,55 +8,64 @@ const download = require("download");
 const path = require("path");
 const deepl = require("deepl");
 const { resolve } = require("path");
+const _ = require("lodash");
 
-const translate = async (conf, text) => {
-  const auth_key = process.env.DEEPL_API_KEY;
-  return new Promise((resolve, reject) => {
-    const textSlug = slug(text);
-    const translationFileName = `deepl_${conf.source_lang}_${conf.target_lang}`;
-    const find = conf[translationFileName][textSlug];
+const createJsonFileForEachWord = async (conf, _words) => {
+  const words = [];
+  _words.forEach((w) => {
+    words.push(w.word);
+    w.examples.forEach((e) => {
+      let sArr = e.sentence.split(" ");
+      sArr.forEach((s) => {
+        s = s.replace(/\./g, "");
+        s = s.replace(/\?/g, "");
+        s = s.replace(/\!/g, "");
 
-    if (find) {
-      resolve(find);
-    } else {
-      console.log("deepl has to be activated");
-      resolve("deepl has to be activated");
-
-      // console.log("deepl call has been made!!!");
-      // deepl({
-      //   source_lang: conf.source_lang,
-      //   free_api: true,
-      //   text,
-      //   target_lang: conf.target_lang,
-      //   auth_key,
-      // })
-      //   .then((res) => {
-      //     const { translations } = res.data;
-      //     const translation = translations[0].text;
-
-      //     conf[translationFileName][textSlug] = translation;
-      //     write(
-      //       `translations/${translationFileName}.json`,
-      //       conf[translationFileName]
-      //     );
-      //     resolve(translation);
-      //   })
-      //   .catch((err) => reject(err, "translate deepl Error"));
-    }
+        words.push(s.toLowerCase());
+      });
+    });
   });
+
+  // uniq
+  const uniqWords = _.uniqBy(words, (w) => w);
+  // console.log(1, words, uniqWords);
+
+  for (word of uniqWords) {
+    const translation = await translate(conf, word);
+
+    const data = {
+      type: "word",
+      slug: slug(word),
+      mp3: null,
+      source_lang: conf.source_lang,
+      content: word,
+      [conf.target_lang]: translation,
+    };
+
+    write(`mp3/${slug(word)}.json`, data);
+  }
 };
 
 const createJsonFileForEachExample = async (conf, words) => {
   const examples = [];
   words.forEach((i) => i.examples.forEach((s) => examples.push(s)));
 
-  for (example of examples) {
+  // examples will be uniq anyway
+  const uniqExamples = _.uniqBy(examples, (e) => e.sentence);
+
+  for (example of uniqExamples) {
     const { sentence } = example;
     const translation = await translate(conf, sentence);
 
     const words = sentence.split(" ");
+
     const wordsWithTranslations = await Promise.all(
       words.map(async (word) => {
+        word = word.replace(/\./g, "");
+        word = word.replace(/\?/g, "");
+        word = word.replace(/\!/g, "");
+        word = word.toLowerCase();
+
         const translation = await translate(conf, word);
         return { word, [conf.target_lang]: translation };
       })
@@ -78,8 +87,51 @@ const createJsonFileForEachExample = async (conf, words) => {
   }
 };
 
-// const source_lang = "EN";
-// const target_lang = "PL";
+counter = 0;
+const translate = async (conf, text) => {
+  counter++;
+  // console.log(counter, text);
+  const auth_key = process.env.DEEPL_API_KEY;
+  return new Promise((resolve, reject) => {
+    const textSlug = slug(text);
+    const translationFileName = `deepl_${conf.source_lang}_${conf.target_lang}`;
+    const find = conf[translationFileName][textSlug];
+
+    if (find) {
+      console.log("translation found in file");
+      resolve(find);
+      return;
+    }
+
+    if (!conf.useDeepl) {
+      console.log("deepl has to be activated");
+      resolve("deepl has to be activated");
+      return;
+    }
+
+    // call to deepl
+    deepl({
+      source_lang: conf.source_lang,
+      free_api: true,
+      text,
+      target_lang: conf.target_lang,
+      auth_key,
+    })
+      .then((res) => {
+        const { translations } = res.data;
+        const translation = translations[0].text;
+
+        conf[translationFileName][textSlug] = translation;
+        write(
+          `translations/${translationFileName}.json`,
+          conf[translationFileName]
+        );
+        resolve(translation);
+      })
+      .catch((err) => reject(err, "translate deepl Error"))
+      .finally(() => console.log("deepl call has been made!!!"));
+  });
+};
 
 const write = (filePath, data) => {
   fs.writeFileSync(path.resolve(__dirname, filePath), JSON.stringify(data));
@@ -216,6 +268,7 @@ module.exports = {
   createFolder,
   readAllJsonFromMp3Folder,
   createJsonFileForEachExample,
+  createJsonFileForEachWord,
   makeDeeplTranslation,
   write,
   read,

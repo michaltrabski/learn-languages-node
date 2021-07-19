@@ -15,6 +15,7 @@ const {
   createFolder,
   readAllJsonFromMp3Folder,
   createJsonFileForEachExample,
+  createJsonFileForEachWord,
   makeDeeplTranslation,
   read,
 } = require("./utils");
@@ -26,13 +27,14 @@ const source_lang = "EN";
 const target_lang = "PL";
 
 const conf = {
+  useDeepl: false,
   source_lang,
   target_lang,
-  textSource: "longText1.txt", // "longText1.txt";
+  textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 5,
-  wordsPerPage: 10,
-  howManyPages: 3,
+  examplexPerWord: 1,
+  wordsPerPage: 2,
+  howManyPages: 1,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
@@ -45,6 +47,7 @@ const conf = {
   console.log("START");
   const { words } = await makeWordsList(conf);
   await createJsonFileForEachExample(conf, words);
+  await createJsonFileForEachWord(conf, words);
   console.log("DONE");
   // // console.log(result);
   // console.log(55555555555555, conf);
