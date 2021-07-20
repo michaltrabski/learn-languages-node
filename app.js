@@ -28,7 +28,8 @@ const source_lang = "EN";
 const target_lang = "PL";
 
 const conf = {
-  headless: false,
+  headless: true,
+  createVoiceover: false,
   browser: null,
   page: null,
   prefix: "[startSpeech r=Slow startSpeech][startSpeech v=X-Loud startSpeech]",
@@ -42,9 +43,9 @@ const conf = {
   target_lang,
   textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 1,
-  wordsPerPage: 2,
-  howManyPages: 1,
+  examplexPerWord: 2,
+  wordsPerPage: 3,
+  howManyPages: 2,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
@@ -56,11 +57,13 @@ const conf = {
 const start = async () => {
   try {
     console.log("START");
+
     const { words } = await makeWordsList(conf);
-    await createJsonFileForEachExample(conf, words);
-    await createJsonFileForEachWord(conf, words);
-    await makeVoiceover(conf);
+    const voicesArray1 = await createJsonFileForEachExample(conf, words);
+    const voicesArray2 = await createJsonFileForEachWord(conf, words);
+    await makeVoiceover(conf, [...voicesArray1, ...voicesArray2]);
     if (conf.browser) conf.browser.close();
+
     console.log("DONE");
   } catch (err) {
     console.log("START FAILED... Trying to START AGAIN!!!", err);

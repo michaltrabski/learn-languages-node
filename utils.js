@@ -10,6 +10,31 @@ const deepl = require("deepl");
 const { resolve } = require("path");
 const _ = require("lodash");
 
+const makeVoiceover = async (conf, voicesArr) => {
+  if (!conf.createVoiceover) return;
+
+  for (voice of voicesArr) {
+    const s = slug(voice);
+    const voiceExist = fs.existsSync(path.resolve("mp3", `${s}.mp3`));
+    console.log(voice, s, voiceExist);
+    if (!voiceExist) {
+      if (!conf.browser) await login(conf);
+      await getAudio(conf, voice);
+    }
+  }
+
+  // if (!conf.browser) await login(conf);
+  // await getAudio(conf, "I prefer gambling in casino");
+  // await getAudio(conf, "Do you speak English?");
+  // await getAudio(conf, "Yes, I do. But let me use my phrasebook");
+  // await getAudio(conf, "What is your name?");
+  // await getAudio(conf, "My first name is Adam, and my last name is Nowak");
+  // await getAudio(conf, "Where you are from?");
+  // await getAudio(conf, "How old are you?");
+};
+
+//////////////////////////////////////////////////////////
+
 const write = (filePath, data) => {
   fs.writeFileSync(path.resolve(__dirname, filePath), JSON.stringify(data));
 };
@@ -22,15 +47,8 @@ const read = (filePath) => {
 };
 
 const wait = (t) => {
-  t = 1000;
+  t = 2000;
   return new Promise((r) => setTimeout(() => r(t), t));
-};
-
-const makeVoiceover = async (conf) => {
-  const filenames = fs.readdirSync(path.resolve(__dirname, "mp3"));
-  console.log(filenames);
-  // if (!conf.browser) await login(conf);
-  // await getAudio(conf, "What is This?");
 };
 
 const getAudio = async (conf, _text) => {
@@ -61,7 +79,7 @@ const getAudio = async (conf, _text) => {
   let $ = cheerio.load(html);
   const link = $("#blastered_datatable [data-link]").attr("data-link");
   const textContent = $("#blastered_datatable .minwidth").text();
-  console.log(4, link, textContent);
+  // console.log(4, link, textContent);
 
   await download(link, "mp3");
   const mp3Name = link.split("/").pop();
@@ -75,29 +93,30 @@ const getAudio = async (conf, _text) => {
     path.resolve(__dirname, "mp3", newMp3Name)
   );
 
-  await wait(5000);
+  // REMOVE ALL RECORDINGS
+  // await wait(5000);
 
-  await page.waitForSelector("#blastered_datatable thead .columswitch");
-  await page.evaluate(() => {
-    document.querySelector("#blastered_datatable thead .columswitch").click();
-  });
+  // await page.waitForSelector("#blastered_datatable thead .columswitch");
+  // await page.evaluate(() => {
+  //   document.querySelector("#blastered_datatable thead .columswitch").click();
+  // });
 
-  await page.waitForSelector("#deleteSelectedBTN");
-  await page.evaluate(() => {
-    document.querySelector("#deleteSelectedBTN").click();
-  });
+  // await page.waitForSelector("#deleteSelectedBTN");
+  // await page.evaluate(() => {
+  //   document.querySelector("#deleteSelectedBTN").click();
+  // });
 
-  await wait(5000);
-  await page.waitForSelector(".swal2-confirm");
-  await page.evaluate(() => {
-    document.querySelector(".swal2-confirm").click();
-  });
-  await wait(5000);
-  await page.waitForSelector(".swal2-confirm");
-  await page.evaluate(() => {
-    document.querySelector(".swal2-confirm").click();
-  });
-  await wait(5000);
+  // await wait(5000);
+  // await page.waitForSelector(".swal2-confirm");
+  // await page.evaluate(() => {
+  //   document.querySelector(".swal2-confirm").click();
+  // });
+  // await wait(5000);
+  // await page.waitForSelector(".swal2-confirm");
+  // await page.evaluate(() => {
+  //   document.querySelector(".swal2-confirm").click();
+  // });
+  // await wait(5000);
 };
 
 const login = async (conf) => {
@@ -135,6 +154,7 @@ const login = async (conf) => {
 };
 
 const createJsonFileForEachWord = async (conf, _words) => {
+  const voicesArray = [];
   const words = [];
   _words.forEach((w) => {
     words.push(w.word);
@@ -155,12 +175,12 @@ const createJsonFileForEachWord = async (conf, _words) => {
   // console.log(1, words, uniqWords);
 
   for (word of uniqWords) {
+    voicesArray.push(word);
     const translation = await translate(conf, word);
 
     const data = {
       type: "word",
       slug: slug(word),
-      mp3: null,
       source_lang: conf.source_lang,
       content: word,
       [conf.target_lang]: translation,
@@ -168,9 +188,11 @@ const createJsonFileForEachWord = async (conf, _words) => {
 
     write(`mp3/${slug(word)}.json`, data);
   }
+  return voicesArray;
 };
 
 const createJsonFileForEachExample = async (conf, words) => {
+  const voicesArray = [];
   const examples = [];
   words.forEach((i) => i.examples.forEach((s) => examples.push(s)));
 
@@ -179,6 +201,7 @@ const createJsonFileForEachExample = async (conf, words) => {
 
   for (example of uniqExamples) {
     const { sentence } = example;
+    voicesArray.push(sentence);
     const translation = await translate(conf, sentence);
 
     const words = sentence.split(" ");
@@ -195,12 +218,9 @@ const createJsonFileForEachExample = async (conf, words) => {
       })
     );
 
-    // console.log(1, words, wordsWithTranslations);
-
     const data = {
       type: "sentence",
       slug: slug(sentence),
-      mp3: null,
       source_lang: conf.source_lang,
       content: sentence,
       [conf.target_lang]: translation,
@@ -209,6 +229,7 @@ const createJsonFileForEachExample = async (conf, words) => {
 
     write(`mp3/${slug(sentence)}.json`, data);
   }
+  return voicesArray;
 };
 
 counter = 0;
