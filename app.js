@@ -18,6 +18,7 @@ const {
   createJsonFileForEachWord,
   makeDeeplTranslation,
   read,
+  makeVoiceover,
 } = require("./utils");
 const path = require("path");
 const axios = require("axios");
@@ -27,6 +28,15 @@ const source_lang = "EN";
 const target_lang = "PL";
 
 const conf = {
+  headless: false,
+  browser: null,
+  page: null,
+  prefix: "[startSpeech r=Slow startSpeech][startSpeech v=X-Loud startSpeech]",
+  suffix: "[endSpeech][endSpeech][sPause sec=1 ePause]",
+  loginPage: process.env.LOGIN_PAGE_MP3_GENERATOR,
+  appPage: process.env.APP_PAGE_MP3_GENERATOR,
+  email: process.env.EMAIL_MP3_GENERATOR,
+  password: process.env.EMAIL_MP3_PASSWORD,
   useDeepl: false,
   source_lang,
   target_lang,
@@ -43,43 +53,47 @@ const conf = {
   ),
 };
 
-(async () => {
-  console.log("START");
-  const { words } = await makeWordsList(conf);
-  await createJsonFileForEachExample(conf, words);
-  await createJsonFileForEachWord(conf, words);
-  console.log("DONE");
-  // // console.log(result);
-  // console.log(55555555555555, conf);
-
-  // const allJsonFiles = readAllJsonFromMp3Folder();
-  // // console.log("allJsonFiles =>", allJsonFiles);
-
-  // await makeDeeplTranslation(allJsonFiles);
-  // addTranslationsToContent(allJsonFiles);
-})();
-
-const addTranslationsToContent = (allJsonFiles) => {
-  const _file = `translations/deepl-${conf.source_lang}-${conf.target_lang}.json`;
-  const deeplTranslationStr = fs.readFileSync(_file, {
-    encoding: "utf8",
-  });
-  const deeplTranslation = JSON.parse(deeplTranslationStr);
-  // console.log(deeplTranslation);
-
-  const files = [...allJsonFiles];
-  files.forEach((fileName) => {
-    const file = `mp3/${fileName}`;
-    const str = fs.readFileSync(file, {
-      encoding: "utf8",
-    });
-    const data = JSON.parse(str);
-    if (data.type !== "sentence") return;
-    // console.log(1, data, data[target_lang], deeplTranslation[data.slug]);
-    data[conf.target_lang] = deeplTranslation[data.slug];
-    fs.writeFileSync(file, JSON.stringify(data));
-  });
+const start = async () => {
+  try {
+    console.log("START");
+    const { words } = await makeWordsList(conf);
+    await createJsonFileForEachExample(conf, words);
+    await createJsonFileForEachWord(conf, words);
+    await makeVoiceover(conf);
+    if (conf.browser) conf.browser.close();
+    console.log("DONE");
+  } catch (err) {
+    console.log("START FAILED... Trying to START AGAIN!!!", err);
+    await conf.browser.close();
+    conf.browser = null;
+    conf.page = null;
+    start();
+  }
 };
+
+start();
+
+// const addTranslationsToContent = (allJsonFiles) => {
+//   const _file = `translations/deepl-${conf.source_lang}-${conf.target_lang}.json`;
+//   const deeplTranslationStr = fs.readFileSync(_file, {
+//     encoding: "utf8",
+//   });
+//   const deeplTranslation = JSON.parse(deeplTranslationStr);
+//   // console.log(deeplTranslation);
+
+//   const files = [...allJsonFiles];
+//   files.forEach((fileName) => {
+//     const file = `mp3/${fileName}`;
+//     const str = fs.readFileSync(file, {
+//       encoding: "utf8",
+//     });
+//     const data = JSON.parse(str);
+//     if (data.type !== "sentence") return;
+//     // console.log(1, data, data[target_lang], deeplTranslation[data.slug]);
+//     data[conf.target_lang] = deeplTranslation[data.slug];
+//     fs.writeFileSync(file, JSON.stringify(data));
+//   });
+// };
 
 (async () => {
   return;
@@ -151,50 +165,12 @@ const addTranslationsToContent = (allJsonFiles) => {
   });
 })();
 
-const loginPage = process.env.LOGIN_PAGE_MP3_GENERATOR;
-const appPage = process.env.APP_PAGE_MP3_GENERATOR;
-const email = process.env.EMAIL_MP3_GENERATOR;
-const password = process.env.EMAIL_MP3_PASSWORD;
-
-const items = [
-  "If you need to download mp3 file, just choose the size od get it for free.",
-  "Dillon asked in an accusing tone.",
-  "If hi need to download mp3 file, just choose the size od get it for free.",
-  "Roy asked in an accusing tone.",
-];
-
-const login = async (run) => {
-  if (!run) return;
-
-  const browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: null,
-  });
-
-  const page = await browser.newPage();
-  await page.goto(loginPage);
-  await page.type("#loginemail", email);
-  await page.type("#loginpassword", password);
-
-  const [response1] = await Promise.all([
-    page.waitForNavigation(),
-    page.click("#login_button"),
-  ]);
-  console.log("Logging...");
-  await page.goto(appPage);
-  console.log("Logged in Success!");
-  // bootstrap-switch-handle-off
-
-  // DISMISS POPUP
-  console.log("Try to click away popup");
-  await wait(5000);
-  await page.waitForSelector(".bootbox-close-button");
-  await page.click(".bootbox-close-button");
-
-  for (let item of items) await getAudio(page, item);
-
-  await browser.close();
-};
+// const items = [
+//   "If you need to download mp3 file, just choose the size od get it for free.",
+//   "Dillon asked in an accusing tone.",
+//   "If hi need to download mp3 file, just choose the size od get it for free.",
+//   "Roy asked in an accusing tone.",
+// ];
 
 // (() => {
 //   const run = true;
