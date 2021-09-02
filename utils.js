@@ -16,7 +16,7 @@ const makeVoiceover = async (conf, voicesArr) => {
   for (voice of voicesArr) {
     const s = slug(voice);
     const voiceExist = fs.existsSync(path.resolve("mp3", `${s}.mp3`));
-    console.log(voice, s, voiceExist);
+    // console.log(123123, voice, s, voiceExist);
     if (!voiceExist) {
       if (!conf.browser) await login(conf);
       await getAudio(conf, voice);
@@ -158,8 +158,8 @@ const createJsonFileForEachWord = async (conf, _words) => {
   const words = [];
   _words.forEach((w) => {
     words.push(w.word);
-    w.examples.forEach((e) => {
-      let sArr = e.sentence.split(" ");
+    w.examplesForWord.forEach((e) => {
+      let sArr = e.example.split(" ");
       sArr.forEach((s) => {
         s = s.replace(/\./g, "");
         s = s.replace(/\?/g, "");
@@ -194,17 +194,20 @@ const createJsonFileForEachWord = async (conf, _words) => {
 const createJsonFileForEachExample = async (conf, words) => {
   const voicesArray = [];
   const examples = [];
-  words.forEach((i) => i.examples.forEach((s) => examples.push(s)));
+  console.log(2, words);
+  words.forEach((i) => i.examplesForWord.forEach((s) => examples.push(s)));
 
   // examples will be uniq anyway
   const uniqExamples = _.uniqBy(examples, (e) => e.sentence);
 
-  for (example of uniqExamples) {
-    const { sentence } = example;
-    voicesArray.push(sentence);
-    const translation = await translate(conf, sentence);
+  console.log(3, uniqExamples);
 
-    const words = sentence.split(" ");
+  for (item of uniqExamples) {
+    const { example } = item;
+    voicesArray.push(example);
+    const translation = await translate(conf, example);
+
+    const words = example.split(" ");
 
     const wordsWithTranslations = await Promise.all(
       words.map(async (word) => {
@@ -220,14 +223,14 @@ const createJsonFileForEachExample = async (conf, words) => {
 
     const data = {
       type: "sentence",
-      slug: slug(sentence),
+      slug: slug(example),
       source_lang: conf.source_lang,
-      content: sentence,
+      content: example,
       [conf.target_lang]: translation,
       words: wordsWithTranslations,
     };
 
-    write(`mp3/${slug(sentence)}.json`, data);
+    write(`mp3/${slug(example)}.json`, data);
   }
   return voicesArray;
 };
@@ -243,7 +246,7 @@ const translate = async (conf, text) => {
     const find = conf[translationFileName][textSlug];
 
     if (find) {
-      console.log("translation found in file");
+      // console.log("translation found in file");
       resolve(find);
       return;
     }
@@ -274,7 +277,7 @@ const translate = async (conf, text) => {
         resolve(translation);
       })
       .catch((err) => reject(err, "translate deepl Error"))
-      .finally(() => console.log("deepl call has been made!!!"));
+      .finally(() => console.log("deepl call has been made!!!", text));
   });
 };
 

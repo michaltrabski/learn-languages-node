@@ -23,13 +23,15 @@ const {
 const path = require("path");
 const axios = require("axios");
 const { makeWordsList } = require("./words");
+const { scrapper } = require("./scrapper");
 
 const source_lang = "EN";
 const target_lang = "PL";
 
 const conf = {
+  createVoiceover: true,
+  useDeepl: true,
   headless: true,
-  createVoiceover: false,
   browser: null,
   page: null,
   prefix: "[startSpeech r=Slow startSpeech][startSpeech v=X-Loud startSpeech]",
@@ -38,14 +40,13 @@ const conf = {
   appPage: process.env.APP_PAGE_MP3_GENERATOR,
   email: process.env.EMAIL_MP3_GENERATOR,
   password: process.env.EMAIL_MP3_PASSWORD,
-  useDeepl: false,
   source_lang,
   target_lang,
   textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 2,
-  wordsPerPage: 3,
-  howManyPages: 2,
+  examplexPerWord: 4,
+  wordsPerPage: 5,
+  howManyPages: 3,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
@@ -58,7 +59,12 @@ const start = async () => {
   try {
     console.log("START");
 
+    // const text = "swim";
+    // const translationsArray = await scrapper(text);
+    // console.log(text, translationsArray);
+
     const { words } = await makeWordsList(conf);
+    // console.log(1, words);
     const voicesArray1 = await createJsonFileForEachExample(conf, words);
     const voicesArray2 = await createJsonFileForEachWord(conf, words);
     await makeVoiceover(conf, [...voicesArray1, ...voicesArray2]);
@@ -67,7 +73,7 @@ const start = async () => {
     console.log("DONE");
   } catch (err) {
     console.log("START FAILED... Trying to START AGAIN!!!", err);
-    await conf.browser.close();
+    if (conf.browser) await conf.browser.close();
     conf.browser = null;
     conf.page = null;
     start();

@@ -61,7 +61,10 @@ const makeWordsList = async (conf) => {
       words: chunk,
     };
 
-    write(`mp3/words-${counter}.json`, data);
+    write(
+      `mp3/content-${conf.source_lang}-${conf.target_lang}-${counter}.json`,
+      data
+    );
   }
 
   // console.log("xxxxxxxxxxxxxxxxxx", words);
@@ -159,7 +162,7 @@ const getWords = async (conf, text, sentences) => {
   const words = Object.entries(countWords).map((item) => ({
     word: item[0],
     count: item[1],
-    examples: [],
+    examplesForWord: [],
   }));
 
   const wordsOrdered = _.orderBy(words, ["count"], ["desc"]).slice(
@@ -204,8 +207,8 @@ const getWords = async (conf, text, sentences) => {
           const translation = await translate(conf, example[0]);
 
           // console.log(223333333, translation);
-          newItem.examples.push({
-            sentence: example[0],
+          newItem.examplesForWord.push({
+            example: example[0],
             [conf.target_lang]: translation,
           });
         }
