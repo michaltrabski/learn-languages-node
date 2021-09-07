@@ -29,8 +29,8 @@ const source_lang = "EN";
 const target_lang = "PL";
 
 const conf = {
-  createVoiceover: true,
-  useDeepl: true,
+  createVoiceover: false,
+  useDeepl: false,
   headless: true,
   browser: null,
   page: null,
@@ -45,8 +45,8 @@ const conf = {
   textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
   examplexPerWord: 4,
-  wordsPerPage: 5,
-  howManyPages: 3,
+  wordsPerPage: 50,
+  howManyPages: 20,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
@@ -64,7 +64,6 @@ const start = async () => {
     // console.log(text, translationsArray);
 
     const { words } = await makeWordsList(conf);
-    // console.log(1, words);
     const voicesArray1 = await createJsonFileForEachExample(conf, words);
     const voicesArray2 = await createJsonFileForEachWord(conf, words);
     await makeVoiceover(conf, [...voicesArray1, ...voicesArray2]);

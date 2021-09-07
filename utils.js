@@ -194,7 +194,6 @@ const createJsonFileForEachWord = async (conf, _words) => {
 const createJsonFileForEachExample = async (conf, words) => {
   const voicesArray = [];
   const examples = [];
-  console.log(2, words);
   words.forEach((i) => i.examplesForWord.forEach((s) => examples.push(s)));
 
   // examples will be uniq anyway
