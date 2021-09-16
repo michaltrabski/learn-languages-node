@@ -15,6 +15,7 @@
     "deepl": "^1.0.12",
     "dotenv": "^10.0.0",
     "download": "^8.0.0",
+    "fs-extra": "^10.0.0",
     "lodash": "^4.17.21",
     "normalize-text": "^2.3.2",
     "puppeteer": "^10.0.0",

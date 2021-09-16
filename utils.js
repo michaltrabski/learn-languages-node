@@ -2,7 +2,7 @@ require("dotenv").config();
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const https = require("https");
-const fs = require("fs");
+const fs = require("fs-extra");
 const slugify = require("slugify");
 const download = require("download");
 const path = require("path");
@@ -10,12 +10,45 @@ const deepl = require("deepl");
 const { resolve } = require("path");
 const _ = require("lodash");
 
+const myWriteSync = (folder, fileName, data) => {
+  fs.ensureDirSync(folder);
+  fs.writeFileSync(path.resolve(folder, fileName), JSON.stringify(data));
+};
+
+const write = (filePath, data) => {
+  fs.writeFileSync(path.resolve(__dirname, filePath), JSON.stringify(data));
+};
+
+const readSourceContent = (conf) => {
+  let text = "";
+  const { source_lang } = conf;
+  const folder = path.resolve("sourceContent", source_lang);
+
+  const folders = fs.readdirSync(folder);
+  folders.forEach((folderName) => {
+    const textFolder = path.resolve(folder, folderName);
+    const filenames = fs.readdirSync(textFolder);
+    filenames.forEach((fileName) => {
+      if (!fileName.includes(".txt")) return;
+      const newText = fs.readFileSync(path.resolve(textFolder, fileName), {
+        encoding: "utf8",
+      });
+      text += newText;
+    });
+  });
+
+  return text;
+};
+
 const makeVoiceover = async (conf, voicesArr) => {
   if (!conf.createVoiceover) return;
+  const { source_lang } = conf;
+  const folderMp3 = path.resolve("mp3", source_lang);
+  fs.ensureDirSync(folderMp3);
 
   for (voice of voicesArr) {
     const s = slug(voice);
-    const voiceExist = fs.existsSync(path.resolve("mp3", `${s}.mp3`));
+    const voiceExist = fs.existsSync(path.resolve(folderMp3, `${s}.mp3`));
     // console.log(123123, voice, s, voiceExist);
     if (!voiceExist) {
       if (!conf.browser) await login(conf);
@@ -34,10 +67,6 @@ const makeVoiceover = async (conf, voicesArr) => {
 };
 
 //////////////////////////////////////////////////////////
-
-const write = (filePath, data) => {
-  fs.writeFileSync(path.resolve(__dirname, filePath), JSON.stringify(data));
-};
 
 const read = (filePath) => {
   const data = fs.readFileSync(filePath, {
@@ -192,6 +221,7 @@ const createJsonFileForEachWord = async (conf, _words) => {
 };
 
 const createJsonFileForEachExample = async (conf, words) => {
+  const { source_lang, target_lang } = conf;
   const voicesArray = [];
   const examples = [];
   words.forEach((i) => i.examplesForWord.forEach((s) => examples.push(s)));
@@ -229,7 +259,11 @@ const createJsonFileForEachExample = async (conf, words) => {
       words: wordsWithTranslations,
     };
 
-    write(`mp3/${slug(example)}.json`, data);
+    myWriteSync(
+      `content/${source_lang}/${target_lang}/`,
+      `${slug(example)}.json`,
+      data
+    );
   }
   return voicesArray;
 };
@@ -351,6 +385,7 @@ const slug = (text) => {
 };
 
 module.exports = {
+  readSourceContent,
   wait,
   slug,
   getAudio,
@@ -361,7 +396,9 @@ module.exports = {
   createJsonFileForEachExample,
   createJsonFileForEachWord,
   makeDeeplTranslation,
-  write,
+
   read,
   makeVoiceover,
+  myWriteSync,
+  write,
 };

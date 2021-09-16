@@ -31,7 +31,7 @@ const target_lang = "PL";
 const conf = {
   createVoiceover: false,
   useDeepl: false,
-  headless: true,
+  headless: false,
   browser: null,
   page: null,
   prefix: "[startSpeech r=Slow startSpeech][startSpeech v=X-Loud startSpeech]",
@@ -44,9 +44,9 @@ const conf = {
   target_lang,
   textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 4,
-  wordsPerPage: 50,
-  howManyPages: 20,
+  examplexPerWord: 1,
+  wordsPerPage: 1,
+  howManyPages: 1,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
@@ -58,12 +58,10 @@ const conf = {
 const start = async () => {
   try {
     console.log("START");
-
-    // const text = "swim";
-    // const translationsArray = await scrapper(text);
-    // console.log(text, translationsArray);
-
     const { words } = await makeWordsList(conf);
+
+    // return console.log("CHWILOWO KONIEC");
+
     const voicesArray1 = await createJsonFileForEachExample(conf, words);
     const voicesArray2 = await createJsonFileForEachWord(conf, words);
     await makeVoiceover(conf, [...voicesArray1, ...voicesArray2]);

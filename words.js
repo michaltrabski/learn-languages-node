@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
 const https = require("https");
-const fs = require("fs");
+const fs = require("fs-extra");
 const slugify = require("slugify");
 const download = require("download");
 const {
@@ -12,31 +12,28 @@ const {
   translate,
   createFolder,
   write,
+  readSourceContent,
+  myWriteSync,
 } = require("./utils");
 const path = require("path");
 const axios = require("axios");
 const n = require("normalize-text");
 const _ = require("lodash");
 
-// const conf.textSource = "largeText.txt"; // "longText1.txt";
-// const conf.splitter = "XYFNKW";
-// const conf.examplexPerWord = 1;
-// const conf.wordsPerPage = 5;
-// const conf.howManyPages = 1;
-// const conf.rowTextLenght = 100100; //333444; //900090009;
-// const conf.sentenceLenghtMin = 35;
-// const conf.sentenceLenghtMax = 50;
-
 const makeWordsList = async (conf) => {
-  createFolder("mp3");
+  const { source_lang: EN, target_lang: PL } = conf;
   const file = path.resolve(__dirname, conf.textSource);
 
-  const text = fs.readFileSync(file, {
-    encoding: "utf8",
-  });
+  const text = readSourceContent(conf);
+  // console.log(1, "text.length", text.length);
 
+  // const text = fs.readFileSync(file, {
+  //   encoding: "utf8",
+  // });
+  // console.log(3, text);
   const normalizedText = getText(conf, text);
-  write("mp3/0normalizedText.txt", normalizedText);
+  // write("mp3/0normalizedText.txt", normalizedText);
+  myWriteSync("normalizedContent", `${EN}-${PL}.txt`, normalizedText);
 
   // 2 get sentences
   const sentences = getSentences(conf, normalizedText);
@@ -61,13 +58,13 @@ const makeWordsList = async (conf) => {
       words: chunk,
     };
 
-    write(
-      `mp3/content-${conf.source_lang}-${conf.target_lang}-${counter}.json`,
+    myWriteSync(
+      `content/${EN}/${PL}/`,
+      `content-${EN}-${PL}-${counter}.json`,
       data
     );
   }
 
-  // console.log("xxxxxxxxxxxxxxxxxx", words);
   return { normalizedText, words, sentences };
 };
 
