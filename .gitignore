@@ -1,6 +1,4 @@
-mp3/
-content/
-normalizedContent/
+
 
 
 
@@ -125,3 +123,8 @@ dist
 
 
 cache/
+
+
+mp3/
+content/
+normalizedContent/

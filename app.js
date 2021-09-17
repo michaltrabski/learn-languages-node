@@ -26,7 +26,7 @@ const axios = require("axios");
 const { makeWordsList } = require("./words");
 const { scrapper } = require("./scrapper");
 
-const source_lang = "DE";
+const source_lang = "EN";
 const target_lang = "PL";
 
 const conf = {
@@ -45,10 +45,10 @@ const conf = {
   target_lang,
   textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 4,
-  wordsPerPage: 15,
-  howManyPages: 2,
-  rowTextLenght: 100100100,
+  examplexPerWord: 50,
+  wordsPerPage: 50,
+  howManyPages: 1,
+  rowTextLenght: 400300200100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
   [`deepl_${source_lang}_${target_lang}`]: myReadSync(
@@ -65,7 +65,7 @@ const start = async () => {
     console.log("START");
     const { words } = await makeWordsList(conf);
 
-    // return console.log("CHWILOWO KONIEC");
+    return console.log("CHWILOWO KONIEC");
 
     const voicesArray1 = await createJsonFileForEachExample(conf, words);
     const voicesArray2 = await createJsonFileForEachWord(conf, words);

@@ -19,19 +19,22 @@ const path = require("path");
 const axios = require("axios");
 const n = require("normalize-text");
 const _ = require("lodash");
+const { normalizeText } = require("normalize-text");
 
 const makeWordsList = async (conf) => {
   const { source_lang: EN, target_lang: PL } = conf;
   const file = path.resolve(__dirname, conf.textSource);
 
-  const text = readSourceContent(conf);
-  // console.log(111111111, text);
-  const normalizedText = getText(conf, text);
-  // console.log(222222222, normalizedText);
-  myWriteSync("normalizedContent", `${EN}-${PL}-text.txt`, normalizedText);
+  const textFromSourceContent = readSourceContent(conf);
+
+  const { normalizedTextInArr, normalizedText } = myNormalizedText(
+    conf,
+    textFromSourceContent
+  );
+  myWriteSync("normalizedContent", `${EN}-${PL}-text.txt`, normalizedTextInArr);
 
   // 2 get sentences
-  const sentences = getSentences(conf, normalizedText);
+  const sentences = getSentences(conf, normalizedTextInArr);
   myWriteSync("normalizedContent", `${EN}-${PL}-sentences.json`, sentences);
 
   // 3 get words object
@@ -64,13 +67,18 @@ const makeWordsList = async (conf) => {
   return { normalizedText, words, sentences };
 };
 
-const getText = (conf, text) => {
+const myNormalizedText = (conf, text) => {
+  const { splitter } = conf;
   // console.log(text.length);
   // 1 normalize text
   let t = text.slice(0, conf.rowTextLenght);
+  console.log(0, t);
 
-  // 2 remove caracters
+  // t = normalizeText(t);
+
+  // second step => remove caracters listed below
   t = t.replace(/\*/g, "");
+  t = t.replace(/\t+/g, " "); // tab
   t = t.replace(/\]/g, "");
   t = t.replace(/\[/g, "");
   t = t.replace(/\=/g, " ");
@@ -80,30 +88,106 @@ const getText = (conf, text) => {
   t = t.replace(/\.\.\./g, "");
   t = t.replace(/\.\./g, "");
   t = t.replace(/\;/g, "");
+  t = t.replace(/\r/g, "");
+
+  // console.log(11111111111111);
+  console.log(t);
+
+  const normalizedTextInArr = [];
+  let normalizedText = "";
+
+  const arr = t
+    .split(/\n/)
+    .filter((item) => item)
+    .forEach((item) => {
+      item = item.replace(/\. /g, `.${conf.splitter}`);
+      item = item.replace(/\? /g, `?${conf.splitter}`);
+      item = item.replace(/\! /g, `!${conf.splitter}`);
+      const items = item.split(splitter);
+      items.forEach((i) => {
+        let line = i.trim();
+        line = line.replace(/\s+/g, " ");
+
+        const first = line[0];
+        const last = line[line.length - 1];
+
+        if (
+          line.length > 1 &&
+          first !== first.toLowerCase() &&
+          /(\.)|(\!)|(\?)/.test(last)
+        ) {
+          normalizedTextInArr.push(line);
+          normalizedText += line + " ";
+        }
+      });
+    });
+
+  // console.log(44444, normalizedTextInArr);
+
+  // third step => replace breaklines
+  // t = t.replace(/\n*/g, "");
 
   // console.log(1, t);
   // 3 replace caracters
-  t = t.replace(/\n/g, ".");
-  t = t.replace(/\t/g, " ");
-  t = t.replace(/\s+/g, " ");
-  console.log(2, t);
-  t = t.replace(/\s+\./g, ".");
-  t = t.replace(/\s+\?/g, "?");
-  t = t.replace(/\s+\!/g, "!");
-  console.log(3, t);
-  t = t.replace(/\.\./g, ".");
-  t = t.replace(/\?\./g, "?");
-  t = t.replace(/\!\./g, "!");
-  console.log(4, t);
-  t = t.replace(/\. /g, `.${conf.splitter}`);
-  t = t.replace(/\? /g, `?${conf.splitter}`);
-  t = t.replace(/\! /g, `!${conf.splitter}`);
+
+  // t = t.replace(/\t/g, " ");
+
+  // console.log(2, t);
+  // t = t.replace(/\s+\./g, ".");
+  // t = t.replace(/\s+\?/g, "?");
+  // t = t.replace(/\s+\!/g, "!");
+  // // console.log(3, t);
+  // t = t.replace(/\.\./g, ".");
+  // t = t.replace(/\?\./g, "?");
+  // t = t.replace(/\!\./g, "!");
+  // // console.log(4, t);
+  // t = t.replace(/\. /g, `.${conf.splitter}`);
+  // t = t.replace(/\? /g, `?${conf.splitter}`);
+  // t = t.replace(/\! /g, `!${conf.splitter}`);
   // console.log(5, t);
-  return t;
+  return { normalizedTextInArr, normalizedText };
 };
 
-const getSentences = (conf, text) => {
-  const sentences = text.split(conf.splitter);
+// const getText = (conf, text) => {
+//   // console.log(text.length);
+//   // 1 normalize text
+//   let t = text.slice(0, conf.rowTextLenght);
+
+//   // 2 remove caracters
+//   t = t.replace(/\*/g, "");
+//   t = t.replace(/\]/g, "");
+//   t = t.replace(/\[/g, "");
+//   t = t.replace(/\=/g, " ");
+//   t = t.replace(/\"/g, "");
+//   t = t.replace(/\“/g, "");
+//   t = t.replace(/\”/g, "");
+//   t = t.replace(/\.\.\./g, "");
+//   t = t.replace(/\.\./g, "");
+//   t = t.replace(/\;/g, "");
+
+//   // console.log(1, t);
+//   // 3 replace caracters
+//   t = t.replace(/\n/g, ".");
+//   t = t.replace(/\t/g, " ");
+//   t = t.replace(/\s+/g, " ");
+//   console.log(2, t);
+//   t = t.replace(/\s+\./g, ".");
+//   t = t.replace(/\s+\?/g, "?");
+//   t = t.replace(/\s+\!/g, "!");
+//   console.log(3, t);
+//   t = t.replace(/\.\./g, ".");
+//   t = t.replace(/\?\./g, "?");
+//   t = t.replace(/\!\./g, "!");
+//   console.log(4, t);
+//   t = t.replace(/\. /g, `.${conf.splitter}`);
+//   t = t.replace(/\? /g, `?${conf.splitter}`);
+//   t = t.replace(/\! /g, `!${conf.splitter}`);
+//   // console.log(5, t);
+//   return t;
+// };
+
+const getSentences = (conf, arrWithSentences) => {
+  const sentences = [...arrWithSentences];
   // console.log(999999, text, sentences);
   const filteredS = sentences.filter(
     (s) =>
