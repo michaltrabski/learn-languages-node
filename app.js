@@ -19,13 +19,14 @@ const {
   makeDeeplTranslation,
   read,
   makeVoiceover,
+  myReadSync,
 } = require("./utils");
 const path = require("path");
 const axios = require("axios");
 const { makeWordsList } = require("./words");
 const { scrapper } = require("./scrapper");
 
-const source_lang = "EN";
+const source_lang = "DE";
 const target_lang = "PL";
 
 const conf = {
@@ -44,15 +45,19 @@ const conf = {
   target_lang,
   textSource: "text.txt", // "longText1.txt";
   splitter: "XYFNKW",
-  examplexPerWord: 1,
-  wordsPerPage: 1,
-  howManyPages: 1,
+  examplexPerWord: 4,
+  wordsPerPage: 15,
+  howManyPages: 2,
   rowTextLenght: 100100100,
   sentenceLenghtMin: 15,
   sentenceLenghtMax: 50,
-  [`deepl_${source_lang}_${target_lang}`]: read(
-    `translations/deepl_${source_lang}_${target_lang}.json`
+  [`deepl_${source_lang}_${target_lang}`]: myReadSync(
+    "translations",
+    `deepl_${source_lang}_${target_lang}.json`
   ),
+  // [`deepl_${source_lang}_${target_lang}`]: read(
+  //   `translations/deepl_${source_lang}_${target_lang}.json`
+  // ),
 };
 
 const start = async () => {

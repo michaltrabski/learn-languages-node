@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app"
+    "start": "npm run nodemon",
+    "start1": "concurrently \"npm run nodemon\" \"npm run open\"",
+    "nodemon": "nodemon app.js",
+    "open": " start "
   },
   "author": "",
   "license": "ISC",

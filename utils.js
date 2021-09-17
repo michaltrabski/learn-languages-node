@@ -10,6 +10,27 @@ const deepl = require("deepl");
 const { resolve } = require("path");
 const _ = require("lodash");
 
+const myReadSync = (folder, filename) => {
+  fs.ensureDirSync(folder);
+  const file = path.resolve(folder, filename);
+  try {
+    const data = fs.readFileSync(file, {
+      encoding: "utf8",
+    });
+    return JSON.parse(data);
+  } catch (err) {
+    fs.writeFileSync(file, JSON.stringify({}));
+    return {};
+  }
+};
+
+const read = (filePath) => {
+  const data = fs.readFileSync(filePath, {
+    encoding: "utf8",
+  });
+  return JSON.parse(data);
+};
+
 const myWriteSync = (folder, fileName, data) => {
   fs.ensureDirSync(folder);
   fs.writeFileSync(path.resolve(folder, fileName), JSON.stringify(data));
@@ -67,13 +88,6 @@ const makeVoiceover = async (conf, voicesArr) => {
 };
 
 //////////////////////////////////////////////////////////
-
-const read = (filePath) => {
-  const data = fs.readFileSync(filePath, {
-    encoding: "utf8",
-  });
-  return JSON.parse(data);
-};
 
 const wait = (t) => {
   t = 2000;
@@ -183,6 +197,7 @@ const login = async (conf) => {
 };
 
 const createJsonFileForEachWord = async (conf, _words) => {
+  const { source_lang: EN, target_lang: PL } = conf;
   const voicesArray = [];
   const words = [];
   _words.forEach((w) => {
@@ -210,26 +225,26 @@ const createJsonFileForEachWord = async (conf, _words) => {
     const data = {
       type: "word",
       slug: slug(word),
-      source_lang: conf.source_lang,
+      source_lang: EN,
       content: word,
-      [conf.target_lang]: translation,
+      [PL]: translation,
     };
 
-    write(`mp3/${slug(word)}.json`, data);
+    myWriteSync(`content/${EN}/${PL}/`, `${slug(word)}.json`, data);
   }
   return voicesArray;
 };
 
 const createJsonFileForEachExample = async (conf, words) => {
-  const { source_lang, target_lang } = conf;
+  const { source_lang: EN, target_lang: PL } = conf;
   const voicesArray = [];
   const examples = [];
   words.forEach((i) => i.examplesForWord.forEach((s) => examples.push(s)));
 
   // examples will be uniq anyway
-  const uniqExamples = _.uniqBy(examples, (e) => e.sentence);
+  const uniqExamples = _.uniqBy(examples, (e) => e.example);
 
-  console.log(3, uniqExamples);
+  // console.log(333333333, words, examples, uniqExamples);
 
   for (item of uniqExamples) {
     const { example } = item;
@@ -246,24 +261,20 @@ const createJsonFileForEachExample = async (conf, words) => {
         word = word.toLowerCase();
 
         const translation = await translate(conf, word);
-        return { word, [conf.target_lang]: translation };
+        return { word, [PL]: translation };
       })
     );
 
     const data = {
       type: "sentence",
       slug: slug(example),
-      source_lang: conf.source_lang,
+      source_lang: EN,
       content: example,
-      [conf.target_lang]: translation,
+      [PL]: translation,
       words: wordsWithTranslations,
     };
 
-    myWriteSync(
-      `content/${source_lang}/${target_lang}/`,
-      `${slug(example)}.json`,
-      data
-    );
+    myWriteSync(`content/${EN}/${PL}/`, `${slug(example)}.json`, data);
   }
   return voicesArray;
 };
@@ -285,7 +296,7 @@ const translate = async (conf, text) => {
     }
 
     if (!conf.useDeepl) {
-      console.log("deepl has to be activated");
+      // console.log("deepl has to be activated");
       resolve("deepl has to be activated");
       return;
     }
@@ -397,8 +408,9 @@ module.exports = {
   createJsonFileForEachWord,
   makeDeeplTranslation,
 
-  read,
   makeVoiceover,
   myWriteSync,
   write,
+  myReadSync,
+  read,
 };

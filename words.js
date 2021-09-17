@@ -25,18 +25,14 @@ const makeWordsList = async (conf) => {
   const file = path.resolve(__dirname, conf.textSource);
 
   const text = readSourceContent(conf);
-  // console.log(1, "text.length", text.length);
-
-  // const text = fs.readFileSync(file, {
-  //   encoding: "utf8",
-  // });
-  // console.log(3, text);
+  // console.log(111111111, text);
   const normalizedText = getText(conf, text);
-  // write("mp3/0normalizedText.txt", normalizedText);
-  myWriteSync("normalizedContent", `${EN}-${PL}.txt`, normalizedText);
+  // console.log(222222222, normalizedText);
+  myWriteSync("normalizedContent", `${EN}-${PL}-text.txt`, normalizedText);
 
   // 2 get sentences
   const sentences = getSentences(conf, normalizedText);
+  myWriteSync("normalizedContent", `${EN}-${PL}-sentences.json`, sentences);
 
   // 3 get words object
   const wordsFullLength = await getWords(conf, normalizedText, sentences);
@@ -85,29 +81,30 @@ const getText = (conf, text) => {
   t = t.replace(/\.\./g, "");
   t = t.replace(/\;/g, "");
 
+  // console.log(1, t);
   // 3 replace caracters
   t = t.replace(/\n/g, ".");
   t = t.replace(/\t/g, " ");
   t = t.replace(/\s+/g, " ");
-
+  console.log(2, t);
   t = t.replace(/\s+\./g, ".");
   t = t.replace(/\s+\?/g, "?");
   t = t.replace(/\s+\!/g, "!");
-
+  console.log(3, t);
   t = t.replace(/\.\./g, ".");
   t = t.replace(/\?\./g, "?");
   t = t.replace(/\!\./g, "!");
-
+  console.log(4, t);
   t = t.replace(/\. /g, `.${conf.splitter}`);
   t = t.replace(/\? /g, `?${conf.splitter}`);
   t = t.replace(/\! /g, `!${conf.splitter}`);
-
+  // console.log(5, t);
   return t;
 };
 
 const getSentences = (conf, text) => {
   const sentences = text.split(conf.splitter);
-
+  // console.log(999999, text, sentences);
   const filteredS = sentences.filter(
     (s) =>
       s !== undefined &&
